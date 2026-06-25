@@ -421,13 +421,9 @@ function buildAiPrompt({ storeUrl, products }) {
       "Do not use em dashes.",
       "Prefer periods and commas over complex punctuation.",
       "Avoid jargon unless it is a common ecommerce term like SEO, meta description, or alt text.",
-      "Optimized product copy must be concise.",
-      "Rule: Replace vague product names with a precise, two-line description.",
-      "Line 1 must state the exact item type, such as apparel, footwear, or accessory, its primary material, and its silhouette or shape.",
-      "Line 2 must detail the color palette, key structural features or hardware, and the specific aesthetic vibe.",
-      "Avoid generic adjectives such as stunning or cool.",
-      "Avoid emojis.",
-      "Avoid em dashes."
+      "Optimized product copy must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Avoid generic filler words.",
+      "Avoid emojis."
     ],
     schema: {
       healthScore: "number from 1 to 55. This is a sample opportunity score, not a store health guarantee.",
@@ -437,7 +433,7 @@ function buildAiPrompt({ storeUrl, products }) {
         {
           product: "product name",
           current: "weak current title or description excerpt",
-          optimized: "two-line optimized description"
+          optimized: "concise optimized product description"
         }
       ],
       beforeAfter: {
@@ -823,10 +819,7 @@ function compactText(text, maxLength) {
 function buildOptimizedSuggestion(product) {
   const title = product.title || "Product";
   const type = product.productType || "fashion item";
-  return [
-    `${title}: ${type} with clear material, item type, and silhouette details.`,
-    "Color, structure, hardware, and aesthetic are stated plainly for faster buyer decisions."
-  ].join("\n");
+  return `${title}: A clear ${type} description that explains the product, key details, and why it fits the shopper's need.`;
 }
 
 function clampNumber(value, min, max, fallback) {

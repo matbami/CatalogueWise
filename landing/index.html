@@ -324,12 +324,22 @@
 
       function renderBeforeAfterExamples(examples) {
         beforeAfterList.innerHTML = "";
-        examples.slice(0, 2).forEach((example, index) => {
+        const visibleExamples = [...examples].filter(Boolean).slice(0, 2);
+
+        while (visibleExamples.length < 2) {
+          visibleExamples.push({
+            product: "Additional sampled product",
+            current: "More product copy can be reviewed when public product data is available.",
+            optimized: "CatalogPulse can generate concise product copy for more sampled products."
+          });
+        }
+
+        visibleExamples.forEach((example, index) => {
           const card = document.createElement("article");
           card.className = "before-after-card";
 
           const title = document.createElement("h3");
-          title.textContent = example.product || `Sample product ${index + 1}`;
+          title.textContent = `Product ${index + 1}: ${example.product || "Sample product"}`;
 
           const grid = document.createElement("div");
           grid.className = "before-after";
