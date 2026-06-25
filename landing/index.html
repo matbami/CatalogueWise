@@ -266,6 +266,9 @@
         progressBar.style.width = "0%";
         unlockedReport.hidden = true;
         premiumCards.forEach((card) => card.classList.remove("is-unlocked"));
+        featureQuestion.value = "";
+        payQuestion.value = "";
+        feedbackEmail.value = "";
         saveStatus.textContent = "";
         saveResponse.disabled = false;
         saveResponse.textContent = "Unlock my report and join beta";
