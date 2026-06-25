@@ -61,32 +61,14 @@ select {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 900;
 }
 
-.brand-mark {
-  position: relative;
-  display: grid;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  padding: 6px;
-  border-radius: 8px;
-  color: #ffffff;
-  background: var(--blue);
-  box-shadow: 0 10px 24px rgba(35, 87, 216, 0.22);
-}
-
-.brand-mark svg {
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2.4;
+.brand-logo {
+  display: block;
+  width: 178px;
+  height: 58px;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .hero {
@@ -566,6 +548,11 @@ h2 {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .brand-logo {
+    width: 156px;
+    height: 52px;
   }
 
   h1 {
