@@ -12,7 +12,7 @@
 
 Recommended defaults:
 
-- Product name: CatalogPilot
+- Product name: CatalogLens
 - Niche: Fashion/apparel Shopify stores
 - Domain: Not yet
 - Form: mailto link or Tally/Google Form
@@ -147,7 +147,7 @@ Once the user confirms or accepts placeholder defaults:
 
 ## Today's Priority Order
 
-1. Choose temporary product name, recommended: CatalogPilot.
+1. Choose temporary product name, recommended: CatalogLens.
 2. Confirm first niche, recommended: fashion/apparel Shopify stores.
 3. Choose form destination: Tally, Google Form, Formspree, or mailto.
 4. Build the landing page with mock dashboard sections.

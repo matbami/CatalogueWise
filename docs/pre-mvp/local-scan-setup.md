@@ -1,6 +1,6 @@
 # Local Scan Setup
 
-CatalogPulse now has a small Node backend for the pre-MVP scan flow.
+CatalogLens now has a small Node backend for the pre-MVP scan flow.
 
 ## What It Does
 
