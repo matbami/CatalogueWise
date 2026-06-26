@@ -12,6 +12,7 @@ loadLocalEnv();
 const port = Number(process.env.PORT || 3000);
 const scanLimitPerIpPerDay = Number(process.env.SCAN_LIMIT_PER_IP_PER_DAY || 5);
 const scanLimitPerStorePerDay = Number(process.env.SCAN_LIMIT_PER_STORE_PER_DAY || 2);
+const scanCacheVersion = 2;
 const scanAttempts = new Map();
 const scanCache = loadScanCache();
 
@@ -281,7 +282,7 @@ function getCachedScan(storeUrl) {
   if (!cached) return null;
 
   const cacheTtlMs = 24 * 60 * 60 * 1000;
-  if (Date.now() - cached.createdAt > cacheTtlMs) {
+  if (cached.version !== scanCacheVersion || Date.now() - cached.createdAt > cacheTtlMs) {
     scanCache.delete(storeUrl);
     return null;
   }
@@ -291,6 +292,7 @@ function getCachedScan(storeUrl) {
 
 function setCachedScan(storeUrl, report) {
   scanCache.set(storeUrl, {
+    version: scanCacheVersion,
     createdAt: Date.now(),
     report
   });
@@ -777,11 +779,16 @@ function normalizeBeforeAfterExamples(report, products) {
       ? [report.beforeAfter]
       : [];
 
-  const examples = sourceExamples.slice(0, 2).map((example, index) => ({
-    product: String(example.product || products[index]?.title || `Sample product ${index + 1}`),
-    current: String(example.current || products[index]?.title || "Current product title"),
-    optimized: String(example.optimized || buildOptimizedTitleSuggestion(products[index] || example))
-  }));
+  const examples = sourceExamples.slice(0, 2).map((example, index) => {
+    const product = products[index] || example;
+    const currentTitle = String(products[index]?.title || example.product || example.current || `Sample product ${index + 1}`);
+
+    return {
+      product: currentTitle,
+      current: currentTitle,
+      optimized: sanitizeTitleCandidate(example.optimized || buildOptimizedTitleSuggestion(product))
+    };
+  });
 
   return examples;
 }
@@ -813,6 +820,18 @@ function buildOptimizedTitleSuggestion(product) {
     return `${cleanedTitle} ${type}`.trim();
   }
   return cleanedTitle;
+}
+
+function sanitizeTitleCandidate(value) {
+  const text = String(value || "")
+    .replace(/^optimized title:\s*/i, "")
+    .replace(/^title:\s*/i, "")
+    .split("\n")[0]
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const firstSentence = text.includes(".") ? text.split(".")[0].trim() : text;
+  return compactText(firstSentence || "Clear product title", 90);
 }
 
 function clampNumber(value, min, max, fallback) {

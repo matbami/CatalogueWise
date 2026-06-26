@@ -297,29 +297,26 @@
           const card = document.createElement("article");
           card.className = "before-after-card";
 
-          const title = document.createElement("h3");
-          title.textContent = index === 0 ? "Title rewrite sample" : "Additional title rewrite";
-
           const grid = document.createElement("div");
           grid.className = "before-after";
 
           const current = document.createElement("div");
           const currentLabel = document.createElement("span");
-          currentLabel.textContent = "Current title";
+          currentLabel.textContent = "Current";
           const currentText = document.createElement("p");
-          currentText.textContent = example.current || "Current product title";
+          currentText.textContent = example.current || "Current product name";
           current.append(currentLabel, currentText);
 
           const optimized = document.createElement("div");
           optimized.className = "optimized-copy";
           const optimizedLabel = document.createElement("span");
-          optimizedLabel.textContent = "Optimized title";
+          optimizedLabel.textContent = "Optimized";
           const optimizedText = document.createElement("p");
-          optimizedText.textContent = example.optimized || "Concise optimized product title.";
+          optimizedText.textContent = example.optimized || "Concise optimized product name.";
           optimized.append(optimizedLabel, optimizedText);
 
           grid.append(current, optimized);
-          card.append(title, grid);
+          card.append(grid);
           beforeAfterList.appendChild(card);
         });
       }
