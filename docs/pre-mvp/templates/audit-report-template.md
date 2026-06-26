@@ -1,6 +1,6 @@
 # Free 10-Product Catalog Health Audit for [Store Name]
 
-Prepared by: Ayobami / CatalogPilot
+Prepared by: Ayobami / CatalogueWise
 Store URL: [Store URL]
 Date: [Date]
 

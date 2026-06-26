@@ -83,7 +83,7 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`CatalogPulse running at http://localhost:${port}`);
+  console.log(`CatalogueWise running at http://localhost:${port}`);
 });
 
 async function handleScan(req, res) {
@@ -191,13 +191,13 @@ async function handleSubmissionsCsv(url, res) {
     const csv = await readFile(submissionsPath, "utf8");
     res.writeHead(200, {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"catalogpilot-submissions.csv\""
+      "content-disposition": "attachment; filename=\"cataloguewise-submissions.csv\""
     });
     res.end(csv);
   } catch {
     res.writeHead(200, {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": "attachment; filename=\"catalogpilot-submissions.csv\""
+      "content-disposition": "attachment; filename=\"cataloguewise-submissions.csv\""
     });
     res.end("createdAt,ip,storeUrl,email,wouldPay,mostImportantFeature,source,healthScore,summary\n");
   }
@@ -344,7 +344,7 @@ async function fetchStoreProducts(storeUrl) {
     const response = await fetch(productsUrl, {
       headers: {
         "accept": "application/json",
-        "user-agent": "CatalogPulse pre-MVP scanner"
+        "user-agent": "CatalogueWise pre-MVP scanner"
       },
       signal: AbortSignal.timeout(8000)
     });
@@ -631,7 +631,7 @@ function renderSubmissionsPage(csv) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CatalogPulse Submissions</title>
+    <title>CatalogueWise Submissions</title>
     <style>
       body { margin: 0; padding: 24px; font-family: system-ui, sans-serif; color: #121716; background: #f5f8f6; }
       h1 { margin-top: 0; }
@@ -643,7 +643,7 @@ function renderSubmissionsPage(csv) {
     </style>
   </head>
   <body>
-    <h1>CatalogPulse Submissions</h1>
+    <h1>CatalogueWise Submissions</h1>
     <a class="download" href="${process.env.ADMIN_TOKEN && process.env.ADMIN_TOKEN !== "change-this-before-deploying" ? `/submissions.csv?token=${encodeURIComponent(process.env.ADMIN_TOKEN)}` : "/submissions.csv"}">Download CSV</a>
     ${
       records.length
@@ -724,8 +724,8 @@ function generateFallbackReport({ storeUrl, products }) {
     source: products.length ? "local-rules" : "demo-fallback",
     healthScore,
     summary: products.length
-      ? `CatalogPulse reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalog issues.`
-      : "CatalogPulse could not read public Shopify product data from this URL, so this is a sample preview of the report format.",
+      ? `CatalogueWise reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalog issues.`
+      : "CatalogueWise could not read public Shopify product data from this URL, so this is a sample preview of the report format.",
     opportunities: [
       shortDescriptions > 0
         ? "Some product descriptions are short and could include fit, material, care, and buyer-use details."
@@ -762,7 +762,7 @@ function normalizeReport(report) {
     })),
     source: report.source || "unknown",
     healthScore: clampNumber(report.healthScore, 1, 55, 55),
-    summary: String(report.summary || "CatalogPulse found visible catalog cleanup opportunities."),
+    summary: String(report.summary || "CatalogueWise found visible catalog cleanup opportunities."),
     opportunities,
     beforeAfterExamples,
     beforeAfter: beforeAfterExamples[0],

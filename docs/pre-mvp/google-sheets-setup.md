@@ -1,6 +1,6 @@
 # Google Sheets Submission Setup
 
-Use this to send CatalogPulse form submissions into Google Sheets.
+Use this to send CatalogueWise form submissions into Google Sheets.
 
 ## 1. Create The Sheet
 
@@ -76,7 +76,7 @@ function getOrCreateSubmissionsSheet() {
 }
 ```
 
-5. Save the project as `CatalogPulse Submissions`.
+5. Save the project as `CatalogueWise Submissions`.
 
 ## 3. Deploy The Web App
 
@@ -88,7 +88,7 @@ function getOrCreateSubmissionsSheet() {
 6. Click `Deploy`.
 7. Copy the Web app URL.
 
-## 4. Add The URL To CatalogPulse
+## 4. Add The URL To CatalogueWise
 
 In `.env`, add:
 

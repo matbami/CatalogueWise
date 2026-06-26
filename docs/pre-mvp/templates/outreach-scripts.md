@@ -1,4 +1,4 @@
-# CatalogPilot Outreach Scripts
+# CatalogueWise Outreach Scripts
 
 Sender: Ayobami
 Contact: matbami2017@gmail.com
@@ -13,7 +13,7 @@ Hi [Name],
 
 I was looking at [Store Name] and noticed a few product pages that may have room for improvement around descriptions, SEO snippets, and product detail clarity.
 
-I am validating CatalogPilot, a Shopify catalog health checker that finds missing SEO fields, weak descriptions, image alt text gaps, and messy product data.
+I am validating CatalogueWise, a Shopify catalog health checker that finds missing SEO fields, weak descriptions, image alt text gaps, and messy product data.
 
 I am offering a free 10-product audit, no Shopify login needed. I will send a short report with before/after examples.
 
@@ -28,7 +28,7 @@ Ayobami
 ```text
 Hi [Store Name] team,
 
-I am validating CatalogPilot, a Shopify catalog health checker for fashion/apparel stores.
+I am validating CatalogueWise, a Shopify catalog health checker for fashion/apparel stores.
 
 I noticed [specific product/page issue]. I am offering a free 10-product audit showing weak descriptions, missing SEO snippets, image alt text opportunities, and product detail gaps. No Shopify login or install needed.
 
@@ -41,7 +41,7 @@ matbami2017@gmail.com
 ## Instagram DM
 
 ```text
-Hi [Name], I checked out [Store Name]. I am validating CatalogPilot, a Shopify catalog health checker that finds weak product pages, missing SEO fields, and content gaps. I am offering a free 10-product audit with before/after examples. No login needed. Want me to send one for your store?
+Hi [Name], I checked out [Store Name]. I am validating CatalogueWise, a Shopify catalog health checker that finds weak product pages, missing SEO fields, and content gaps. I am offering a free 10-product audit with before/after examples. No login needed. Want me to send one for your store?
 ```
 
 ## Follow-Up Message
@@ -72,7 +72,7 @@ Ayobami
 ## Follow-Up After Audit
 
 ```text
-Hi [Name], checking whether the audit was useful. I am deciding what to build first for CatalogPilot, so your feedback would help a lot.
+Hi [Name], checking whether the audit was useful. I am deciding what to build first for CatalogueWise, so your feedback would help a lot.
 
 Which of these would be most valuable for your store?
 
