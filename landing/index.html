@@ -43,6 +43,9 @@
             />
             <button type="submit">Run free test</button>
           </div>
+          <div class="scan-console" id="scanConsole" hidden aria-live="polite">
+            <div class="console-lines" id="consoleLines"></div>
+          </div>
         </form>
       </section>
 
@@ -156,6 +159,8 @@
     <script>
       const scanForm = document.querySelector("#scanForm");
       const storeUrl = document.querySelector("#storeUrl");
+      const scanConsole = document.querySelector("#scanConsole");
+      const consoleLines = document.querySelector("#consoleLines");
       const resultSection = document.querySelector("#resultSection");
       const detectedStore = document.querySelector("#detectedStore");
       const reportSummary = document.querySelector("#reportSummary");
@@ -172,6 +177,7 @@
       const unlockedReport = document.querySelector("#unlockedReport");
       const premiumCards = document.querySelectorAll(".premium-card");
       let currentReport = null;
+      let consoleTimer = null;
 
       scanForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -179,6 +185,7 @@
         button.disabled = true;
         button.innerHTML = '<span class="button-loader" aria-hidden="true"></span> Generating report';
         resetResult();
+        startScanConsole();
 
         const scanPromise = fetch("/api/scan", {
           method: "POST",
@@ -216,12 +223,14 @@
               "The full app will scan every product, group issues by priority, and let you approve optimized updates in bulk."
           });
         } finally {
+          stopScanConsole();
           button.disabled = false;
           button.textContent = "Run free test";
         }
       });
 
       function resetResult() {
+        stopScanConsole();
         resultSection.hidden = true;
         unlockedReport.hidden = true;
         fullAppNote.hidden = true;
@@ -231,6 +240,47 @@
         saveStatus.textContent = "";
         saveResponse.disabled = false;
         saveResponse.textContent = "Unlock my report and join Beta";
+      }
+
+      function startScanConsole() {
+        const messages = [
+          "[INFO] Connecting to public Shopify storefront...",
+          "[INFO] Checking products.json for sample products...",
+          "[INFO] Reading visible product descriptions...",
+          "[INFO] Looking for SEO and catalogue cleanup gaps...",
+          "[INFO] Preparing optimized description preview...",
+          "[INFO] Finalizing sample report..."
+        ];
+        let index = 0;
+
+        scanConsole.hidden = false;
+        consoleLines.innerHTML = "";
+        addConsoleLine(messages[index]);
+
+        consoleTimer = window.setInterval(() => {
+          index += 1;
+          if (index >= messages.length) {
+            window.clearInterval(consoleTimer);
+            consoleTimer = null;
+            return;
+          }
+          addConsoleLine(messages[index]);
+        }, 460);
+      }
+
+      function stopScanConsole() {
+        if (consoleTimer) {
+          window.clearInterval(consoleTimer);
+          consoleTimer = null;
+        }
+        scanConsole.hidden = true;
+      }
+
+      function addConsoleLine(message) {
+        const line = document.createElement("p");
+        line.textContent = message;
+        consoleLines.appendChild(line);
+        consoleLines.scrollTop = consoleLines.scrollHeight;
       }
 
       function renderReport(report) {

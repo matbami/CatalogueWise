@@ -197,9 +197,48 @@ h2 {
   animation: spin 780ms linear infinite;
 }
 
+.scan-console {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(23, 32, 51, 0.14);
+  border-radius: 8px;
+  background: #101827;
+  text-align: left;
+}
+
+.console-lines {
+  min-height: 148px;
+  max-height: 148px;
+  overflow: hidden;
+  padding: 14px 16px;
+  color: #c7f9d4;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.console-lines p {
+  margin: 0;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: consoleLineIn 180ms ease forwards;
+}
+
+.console-lines p::before {
+  content: "$ ";
+  color: #67d6ff;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes consoleLineIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
