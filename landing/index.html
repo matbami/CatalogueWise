@@ -92,7 +92,7 @@
             <div class="report-card">
               <strong>Top opportunities</strong>
               <ul id="opportunityList">
-                <li>Improve unclear product titles.</li>
+                <li>Improve weak product descriptions.</li>
                 <li>Add missing SEO meta descriptions.</li>
                 <li>Generate image alt text.</li>
               </ul>
@@ -209,8 +209,8 @@
               "Bulk approved updates would still be useful for growing catalogues."
             ],
             beforeAfter: {
-              current: "Product title could not be fetched automatically.",
-              optimized: "Clear product title preview unavailable."
+              current: "Product description could not be fetched automatically.",
+              optimized: "Clear product description preview unavailable."
             },
             bulkOpportunity:
               "The full app will scan every product, group issues by priority, and let you approve optimized updates in bulk."
@@ -288,7 +288,7 @@
           const currentLabel = document.createElement("span");
           currentLabel.textContent = "Current";
           const currentText = document.createElement("p");
-          currentText.textContent = example.current || "Current product name";
+          currentText.textContent = example.current || "Current product description";
           current.append(currentLabel, currentText);
 
           const optimized = document.createElement("div");
@@ -296,7 +296,7 @@
           const optimizedLabel = document.createElement("span");
           optimizedLabel.textContent = "Optimized";
           const optimizedText = document.createElement("p");
-          optimizedText.textContent = example.optimized || "Concise optimized product name.";
+          optimizedText.textContent = example.optimized || "Concise optimized product description.";
           optimized.append(optimizedLabel, optimizedText);
 
           grid.append(current, optimized);

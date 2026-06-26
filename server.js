@@ -12,7 +12,7 @@ loadLocalEnv();
 const port = Number(process.env.PORT || 3000);
 const scanLimitPerIpPerDay = Number(process.env.SCAN_LIMIT_PER_IP_PER_DAY || 5);
 const scanLimitPerStorePerDay = Number(process.env.SCAN_LIMIT_PER_STORE_PER_DAY || 2);
-const scanCacheVersion = 2;
+const scanCacheVersion = 3;
 const scanAttempts = new Map();
 const scanCache = loadScanCache();
 
@@ -421,9 +421,11 @@ function buildAiPrompt({ storeUrl, products }) {
       "Do not use em dashes.",
       "Prefer periods and commas over complex punctuation.",
       "Avoid jargon unless it is a common ecommerce term like SEO, meta description, or alt text.",
-      "Optimize product titles only.",
-      "Do not rewrite long product descriptions in this preview.",
-      "Optimized titles must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Optimize product descriptions only.",
+      "Do not rewrite product titles in this preview.",
+      "Current and optimized examples must compare descriptions, not titles.",
+      "Optimized descriptions must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Keep optimized descriptions to 2 or 3 short sentences.",
       "Avoid generic filler words.",
       "Avoid emojis."
     ],
@@ -434,14 +436,14 @@ function buildAiPrompt({ storeUrl, products }) {
       beforeAfterExamples: [
         {
           product: "product name",
-          current: "current product title",
-          optimized: "optimized product title"
+          current: "current product description",
+          optimized: "optimized product description"
         }
       ],
       beforeAfter: {
         product: "product name",
-        current: "current product title",
-        optimized: "optimized product title"
+        current: "current product description",
+        optimized: "optimized product description"
       },
       bulkOpportunity: "one sentence about bulk scanning and approved updates"
     }
@@ -702,7 +704,6 @@ function generateFallbackReport({ storeUrl, products }) {
     description: "Short product description.",
     images: []
   };
-  const description = product.description || "";
   const missingAltCount = products.reduce(
     (count, item) => count + item.images.filter((image) => !image.alt).length,
     0
@@ -711,8 +712,8 @@ function generateFallbackReport({ storeUrl, products }) {
   const healthScore = products.length ? Math.min(55, Math.max(38, 64 - missingAltCount * 3 - shortDescriptions * 6)) : 55;
   const beforeAfterExamples = (products.length ? products : [product]).slice(0, 2).map((item) => ({
     product: item.title,
-    current: item.title,
-    optimized: buildOptimizedTitleSuggestion(item)
+    current: buildCurrentDescriptionSample(item),
+    optimized: buildOptimizedDescriptionSuggestion(item)
   }));
 
   return normalizeReport({
@@ -778,12 +779,12 @@ function normalizeBeforeAfterExamples(report, products) {
 
   const examples = sourceExamples.slice(0, 2).map((example, index) => {
     const product = products[index] || example;
-    const currentTitle = String(products[index]?.title || example.product || example.current || `Sample product ${index + 1}`);
+    const productName = String(product.title || example.product || `Sample product ${index + 1}`);
 
     return {
-      product: currentTitle,
-      current: currentTitle,
-      optimized: sanitizeTitleCandidate(example.optimized || buildOptimizedTitleSuggestion(product))
+      product: productName,
+      current: sanitizeDescriptionCandidate(example.current || buildCurrentDescriptionSample(product)),
+      optimized: sanitizeDescriptionCandidate(example.optimized || buildOptimizedDescriptionSuggestion(product))
     };
   });
 
@@ -809,26 +810,42 @@ function compactText(text, maxLength) {
   return `${clean.slice(0, maxLength - 3)}...`;
 }
 
-function buildOptimizedTitleSuggestion(product) {
-  const title = product.title || "Product";
-  const type = product.productType || "fashion item";
-  const cleanedTitle = title.replace(/\s+/g, " ").trim();
-  if (type && !cleanedTitle.toLowerCase().includes(type.toLowerCase())) {
-    return `${cleanedTitle} ${type}`.trim();
-  }
-  return cleanedTitle;
+function buildCurrentDescriptionSample(product) {
+  return compactText(
+    product.description ||
+      `${product.title || "This product"} is listed with limited public description details.`,
+    240
+  );
 }
 
-function sanitizeTitleCandidate(value) {
+function buildOptimizedDescriptionSuggestion(product) {
+  const title = product.title || "Product";
+  const type = product.productType || "fashion item";
+  const vendor = product.vendor ? ` from ${product.vendor}` : "";
+  const description = product.description || "";
+  const materialHint = findMaterialHint(description);
+  const materialCopy = materialHint ? ` with ${materialHint}` : "";
+
+  return compactText(
+    `${title} is a ${type}${vendor}${materialCopy}. It gives shoppers a clearer view of the style, fit, and everyday use before they buy.`,
+    260
+  );
+}
+
+function sanitizeDescriptionCandidate(value) {
   const text = String(value || "")
-    .replace(/^optimized title:\s*/i, "")
-    .replace(/^title:\s*/i, "")
-    .split("\n")[0]
+    .replace(/^optimized description:\s*/i, "")
+    .replace(/^description:\s*/i, "")
+    .replace(/—/g, ",")
     .replace(/\s+/g, " ")
     .trim();
 
-  const firstSentence = text.includes(".") ? text.split(".")[0].trim() : text;
-  return compactText(firstSentence || "Clear product title", 90);
+  return compactText(text || "Clear product description preview unavailable.", 260);
+}
+
+function findMaterialHint(text) {
+  const match = String(text || "").match(/\b(cotton|linen|silk|wool|denim|leather|suede|polyester|nylon|spandex|elastane|viscose|rayon|jersey|fleece)\b/i);
+  return match ? match[0].toLowerCase() : "";
 }
 
 function clampNumber(value, min, max, fallback) {
