@@ -1,6 +1,6 @@
 # Local Scan Setup
 
-CatalogLens now has a small Node backend for the pre-MVP scan flow.
+CatalogWise now has a small Node backend for the pre-MVP scan flow.
 
 ## What It Does
 

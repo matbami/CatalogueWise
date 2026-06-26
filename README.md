@@ -1,4 +1,4 @@
-# CatalogLens Pre-MVP
+# CatalogWise Pre-MVP
 
 A lightweight Shopify catalog health scanner used to validate demand before building the full Shopify app.
 

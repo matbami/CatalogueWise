@@ -1,6 +1,6 @@
 # Google Sheets Submission Setup
 
-Use this to send CatalogLens form submissions into Google Sheets.
+Use this to send CatalogWise form submissions into Google Sheets.
 
 ## 1. Create The Sheet
 
@@ -76,7 +76,7 @@ function getOrCreateSubmissionsSheet() {
 }
 ```
 
-5. Save the project as `CatalogLens Submissions`.
+5. Save the project as `CatalogWise Submissions`.
 
 ## 3. Deploy The Web App
 
@@ -88,7 +88,7 @@ function getOrCreateSubmissionsSheet() {
 6. Click `Deploy`.
 7. Copy the Web app URL.
 
-## 4. Add The URL To CatalogLens
+## 4. Add The URL To CatalogWise
 
 In `.env`, add:
 
