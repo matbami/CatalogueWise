@@ -12,7 +12,7 @@ loadLocalEnv();
 const port = Number(process.env.PORT || 3000);
 const scanLimitPerIpPerDay = Number(process.env.SCAN_LIMIT_PER_IP_PER_DAY || 5);
 const scanLimitPerStorePerDay = Number(process.env.SCAN_LIMIT_PER_STORE_PER_DAY || 2);
-const scanCacheVersion = 2;
+const scanCacheVersion = 3;
 const scanAttempts = new Map();
 const scanCache = loadScanCache();
 
@@ -126,13 +126,12 @@ async function handleFeedback(req, res) {
     return;
   }
 
-  const email = String(body.email || "").trim();
   const wouldPay = String(body.wouldPay || "").trim();
   const mostImportantFeature = String(body.mostImportantFeature || "").trim();
 
-  if (!email || !wouldPay || !mostImportantFeature) {
+  if (!wouldPay || !mostImportantFeature) {
     sendJson(res, 400, {
-      error: "Email, payment interest, and preferred feature are required."
+      error: "Payment interest and preferred feature are required."
     });
     return;
   }
@@ -141,7 +140,6 @@ async function handleFeedback(req, res) {
     createdAt: new Date().toISOString(),
     ip: getClientIp(req),
     storeUrl,
-    email,
     wouldPay,
     mostImportantFeature,
     source: String(body.source || "").trim(),
@@ -199,7 +197,7 @@ async function handleSubmissionsCsv(url, res) {
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": "attachment; filename=\"cataloguewise-submissions.csv\""
     });
-    res.end("createdAt,ip,storeUrl,email,wouldPay,mostImportantFeature,source,healthScore,summary\n");
+    res.end("createdAt,ip,storeUrl,wouldPay,mostImportantFeature,source,healthScore,summary\n");
   }
 }
 
@@ -407,11 +405,11 @@ function buildAiPrompt({ storeUrl, products }) {
     storeUrl,
     products,
     instructions: [
-      "Create a compact pre-MVP Shopify catalog health preview.",
+      "Create a compact pre-MVP Shopify catalogue health preview.",
       "Audit only the provided public product data.",
       "Return strict JSON only.",
       "Do not promise SEO ranking improvement.",
-      "Focus on fashion/apparel catalog issues when relevant.",
+      "Focus on fashion/apparel catalogue issues when relevant.",
       "Keep the report short and useful.",
       "Do not claim access to Shopify admin, internal tags, private SEO fields, inventory, sales, or customer data.",
       "Do not invent facts that are not visible in the provided product data.",
@@ -423,9 +421,11 @@ function buildAiPrompt({ storeUrl, products }) {
       "Do not use em dashes.",
       "Prefer periods and commas over complex punctuation.",
       "Avoid jargon unless it is a common ecommerce term like SEO, meta description, or alt text.",
-      "Optimize product titles only.",
-      "Do not rewrite long product descriptions in this preview.",
-      "Optimized titles must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Optimize product descriptions only.",
+      "Do not rewrite product titles in this preview.",
+      "Current and optimized examples must compare descriptions, not titles.",
+      "Optimized descriptions must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Keep optimized descriptions to 2 or 3 short sentences.",
       "Avoid generic filler words.",
       "Avoid emojis."
     ],
@@ -436,14 +436,14 @@ function buildAiPrompt({ storeUrl, products }) {
       beforeAfterExamples: [
         {
           product: "product name",
-          current: "current product title",
-          optimized: "optimized product title"
+          current: "current product description",
+          optimized: "optimized product description"
         }
       ],
       beforeAfter: {
         product: "product name",
-        current: "current product title",
-        optimized: "optimized product title"
+        current: "current product description",
+        optimized: "optimized product description"
       },
       bulkOpportunity: "one sentence about bulk scanning and approved updates"
     }
@@ -469,7 +469,7 @@ async function generateGeminiReport({ storeUrl, products }) {
           parts: [
             {
               text: [
-                "You are an ecommerce catalog quality analyst.",
+                "You are an ecommerce catalogue quality analyst.",
                 "Produce concise Shopify product content, SEO, and conversion clarity feedback.",
                 "Return strict JSON only.",
                 JSON.stringify(prompt)
@@ -480,8 +480,9 @@ async function generateGeminiReport({ storeUrl, products }) {
       ],
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 720,
-        responseMimeType: "application/json"
+        maxOutputTokens: 1400,
+        responseMimeType: "application/json",
+        responseSchema: reportResponseSchema()
       }
     }),
     signal: AbortSignal.timeout(12000)
@@ -494,7 +495,7 @@ async function generateGeminiReport({ storeUrl, products }) {
 
   const data = await response.json();
   const content = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-  const parsed = JSON.parse(content);
+  const parsed = parseModelJson(content, "Gemini", data.candidates?.[0]?.finishReason);
 
   return normalizeReport({
     storeUrl,
@@ -516,13 +517,13 @@ async function generateOpenAiReport({ storeUrl, products }) {
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       temperature: 0.4,
-      max_tokens: 720,
+      max_tokens: 1400,
       response_format: { type: "json_object" },
       messages: [
         {
           role: "system",
           content:
-            "You are an ecommerce catalog quality analyst. You produce concise Shopify product content, SEO, and conversion clarity feedback."
+            "You are an ecommerce catalogue quality analyst. You produce concise Shopify product content, SEO, and conversion clarity feedback."
         },
         {
           role: "user",
@@ -540,7 +541,7 @@ async function generateOpenAiReport({ storeUrl, products }) {
 
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content || "{}";
-  const parsed = JSON.parse(content);
+  const parsed = parseModelJson(content, "OpenAI", data.choices?.[0]?.finish_reason);
 
   return normalizeReport({
     storeUrl,
@@ -550,13 +551,82 @@ async function generateOpenAiReport({ storeUrl, products }) {
   });
 }
 
+function reportResponseSchema() {
+  return {
+    type: "object",
+    properties: {
+      healthScore: { type: "number" },
+      summary: { type: "string" },
+      opportunities: {
+        type: "array",
+        items: { type: "string" }
+      },
+      beforeAfterExamples: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            product: { type: "string" },
+            current: { type: "string" },
+            optimized: { type: "string" }
+          },
+          required: ["product", "current", "optimized"]
+        }
+      },
+      beforeAfter: {
+        type: "object",
+        properties: {
+          product: { type: "string" },
+          current: { type: "string" },
+          optimized: { type: "string" }
+        },
+        required: ["product", "current", "optimized"]
+      },
+      bulkOpportunity: { type: "string" }
+    },
+    required: ["healthScore", "summary", "opportunities", "beforeAfterExamples", "bulkOpportunity"]
+  };
+}
+
+function parseModelJson(content, providerName, finishReason) {
+  const cleanContent = String(content || "")
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleanContent);
+  } catch (error) {
+    const extracted = extractJsonObject(cleanContent);
+    if (extracted && extracted !== cleanContent) {
+      try {
+        return JSON.parse(extracted);
+      } catch {
+        // The detailed error below is more useful than a second parse failure.
+      }
+    }
+
+    const reason = finishReason ? ` Finish reason: ${finishReason}.` : "";
+    const preview = cleanContent.slice(0, 180).replace(/\s+/g, " ");
+    throw new Error(`${providerName} returned invalid JSON.${reason} Preview: ${preview}`);
+  }
+}
+
+function extractJsonObject(text) {
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) return "";
+  return text.slice(firstBrace, lastBrace + 1);
+}
+
 async function saveSubmission(submission) {
   await mkdir(dataDir, { recursive: true });
 
   if (!existsSync(submissionsPath)) {
     await appendFile(
       submissionsPath,
-      "createdAt,ip,storeUrl,email,wouldPay,mostImportantFeature,source,healthScore,summary\n"
+      "createdAt,ip,storeUrl,wouldPay,mostImportantFeature,source,healthScore,summary\n"
     );
   }
 
@@ -566,7 +636,6 @@ async function saveSubmission(submission) {
       submission.createdAt,
       submission.ip,
       submission.storeUrl,
-      submission.email,
       submission.wouldPay,
       submission.mostImportantFeature,
       submission.source,
@@ -705,7 +774,6 @@ function generateFallbackReport({ storeUrl, products }) {
     description: "Short product description.",
     images: []
   };
-  const description = product.description || "";
   const missingAltCount = products.reduce(
     (count, item) => count + item.images.filter((image) => !image.alt).length,
     0
@@ -714,8 +782,8 @@ function generateFallbackReport({ storeUrl, products }) {
   const healthScore = products.length ? Math.min(55, Math.max(38, 64 - missingAltCount * 3 - shortDescriptions * 6)) : 55;
   const beforeAfterExamples = (products.length ? products : [product]).slice(0, 2).map((item) => ({
     product: item.title,
-    current: item.title,
-    optimized: buildOptimizedTitleSuggestion(item)
+    current: buildCurrentDescriptionSample(item),
+    optimized: buildOptimizedDescriptionSuggestion(item)
   }));
 
   return normalizeReport({
@@ -724,7 +792,7 @@ function generateFallbackReport({ storeUrl, products }) {
     source: products.length ? "local-rules" : "demo-fallback",
     healthScore,
     summary: products.length
-      ? `CatalogueWise reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalog issues.`
+      ? `CatalogueWise reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalogue issues.`
       : "CatalogueWise could not read public Shopify product data from this URL, so this is a sample preview of the report format.",
     opportunities: [
       shortDescriptions > 0
@@ -732,7 +800,7 @@ function generateFallbackReport({ storeUrl, products }) {
         : "Product descriptions can be strengthened with clearer buyer benefits and product-specific details.",
       missingAltCount > 0
         ? "Several product images appear to be missing descriptive alt text."
-        : "Image alt text should be checked across the full catalog for accessibility and SEO context.",
+        : "Image alt text should be checked across the full catalogue for accessibility and SEO context.",
       "SEO meta descriptions can be generated in bulk and reviewed before publishing."
     ],
     beforeAfterExamples,
@@ -762,13 +830,13 @@ function normalizeReport(report) {
     })),
     source: report.source || "unknown",
     healthScore: clampNumber(report.healthScore, 1, 55, 55),
-    summary: String(report.summary || "CatalogueWise found visible catalog cleanup opportunities."),
+    summary: String(report.summary || "CatalogueWise found visible catalogue cleanup opportunities."),
     opportunities,
     beforeAfterExamples,
     beforeAfter: beforeAfterExamples[0],
     bulkOpportunity:
       report.bulkOpportunity ||
-      "The full app will scan the entire catalog, group issues by priority, and preview approved updates in bulk."
+      "The full app will scan the entire catalogue, group issues by priority, and preview approved updates in bulk."
   };
 }
 
@@ -781,12 +849,12 @@ function normalizeBeforeAfterExamples(report, products) {
 
   const examples = sourceExamples.slice(0, 2).map((example, index) => {
     const product = products[index] || example;
-    const currentTitle = String(products[index]?.title || example.product || example.current || `Sample product ${index + 1}`);
+    const productName = String(product.title || example.product || `Sample product ${index + 1}`);
 
     return {
-      product: currentTitle,
-      current: currentTitle,
-      optimized: sanitizeTitleCandidate(example.optimized || buildOptimizedTitleSuggestion(product))
+      product: productName,
+      current: sanitizeDescriptionCandidate(example.current || buildCurrentDescriptionSample(product)),
+      optimized: sanitizeDescriptionCandidate(example.optimized || buildOptimizedDescriptionSuggestion(product))
     };
   });
 
@@ -812,26 +880,42 @@ function compactText(text, maxLength) {
   return `${clean.slice(0, maxLength - 3)}...`;
 }
 
-function buildOptimizedTitleSuggestion(product) {
-  const title = product.title || "Product";
-  const type = product.productType || "fashion item";
-  const cleanedTitle = title.replace(/\s+/g, " ").trim();
-  if (type && !cleanedTitle.toLowerCase().includes(type.toLowerCase())) {
-    return `${cleanedTitle} ${type}`.trim();
-  }
-  return cleanedTitle;
+function buildCurrentDescriptionSample(product) {
+  return compactText(
+    product.description ||
+      `${product.title || "This product"} is listed with limited public description details.`,
+    240
+  );
 }
 
-function sanitizeTitleCandidate(value) {
+function buildOptimizedDescriptionSuggestion(product) {
+  const title = product.title || "Product";
+  const type = product.productType || "fashion item";
+  const vendor = product.vendor ? ` from ${product.vendor}` : "";
+  const description = product.description || "";
+  const materialHint = findMaterialHint(description);
+  const materialCopy = materialHint ? ` with ${materialHint}` : "";
+
+  return compactText(
+    `${title} is a ${type}${vendor}${materialCopy}. It gives shoppers a clearer view of the style, fit, and everyday use before they buy.`,
+    260
+  );
+}
+
+function sanitizeDescriptionCandidate(value) {
   const text = String(value || "")
-    .replace(/^optimized title:\s*/i, "")
-    .replace(/^title:\s*/i, "")
-    .split("\n")[0]
+    .replace(/^optimized description:\s*/i, "")
+    .replace(/^description:\s*/i, "")
+    .replace(/—/g, ",")
     .replace(/\s+/g, " ")
     .trim();
 
-  const firstSentence = text.includes(".") ? text.split(".")[0].trim() : text;
-  return compactText(firstSentence || "Clear product title", 90);
+  return compactText(text || "Clear product description preview unavailable.", 260);
+}
+
+function findMaterialHint(text) {
+  const match = String(text || "").match(/\b(cotton|linen|silk|wool|denim|leather|suede|polyester|nylon|spandex|elastane|viscose|rayon|jersey|fleece)\b/i);
+  return match ? match[0].toLowerCase() : "";
 }
 
 function clampNumber(value, min, max, fallback) {
