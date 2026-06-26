@@ -126,13 +126,13 @@ async function handleFeedback(req, res) {
     return;
   }
 
-  const email = String(body.email || "").trim();
+  const contactHandle = String(body.contactHandle || "").trim();
   const wouldPay = String(body.wouldPay || "").trim();
   const mostImportantFeature = String(body.mostImportantFeature || "").trim();
 
-  if (!email || !wouldPay || !mostImportantFeature) {
+  if (!contactHandle || !wouldPay || !mostImportantFeature) {
     sendJson(res, 400, {
-      error: "Email, payment interest, and preferred feature are required."
+      error: "Store name or handle, payment interest, and preferred feature are required."
     });
     return;
   }
@@ -141,7 +141,7 @@ async function handleFeedback(req, res) {
     createdAt: new Date().toISOString(),
     ip: getClientIp(req),
     storeUrl,
-    email,
+    contactHandle,
     wouldPay,
     mostImportantFeature,
     source: String(body.source || "").trim(),
@@ -199,7 +199,7 @@ async function handleSubmissionsCsv(url, res) {
       "content-type": "text/csv; charset=utf-8",
       "content-disposition": "attachment; filename=\"cataloguewise-submissions.csv\""
     });
-    res.end("createdAt,ip,storeUrl,email,wouldPay,mostImportantFeature,source,healthScore,summary\n");
+    res.end("createdAt,ip,storeUrl,contactHandle,wouldPay,mostImportantFeature,source,healthScore,summary\n");
   }
 }
 
@@ -407,11 +407,11 @@ function buildAiPrompt({ storeUrl, products }) {
     storeUrl,
     products,
     instructions: [
-      "Create a compact pre-MVP Shopify catalog health preview.",
+      "Create a compact pre-MVP Shopify catalogue health preview.",
       "Audit only the provided public product data.",
       "Return strict JSON only.",
       "Do not promise SEO ranking improvement.",
-      "Focus on fashion/apparel catalog issues when relevant.",
+      "Focus on fashion/apparel catalogue issues when relevant.",
       "Keep the report short and useful.",
       "Do not claim access to Shopify admin, internal tags, private SEO fields, inventory, sales, or customer data.",
       "Do not invent facts that are not visible in the provided product data.",
@@ -469,7 +469,7 @@ async function generateGeminiReport({ storeUrl, products }) {
           parts: [
             {
               text: [
-                "You are an ecommerce catalog quality analyst.",
+                "You are an ecommerce catalogue quality analyst.",
                 "Produce concise Shopify product content, SEO, and conversion clarity feedback.",
                 "Return strict JSON only.",
                 JSON.stringify(prompt)
@@ -522,7 +522,7 @@ async function generateOpenAiReport({ storeUrl, products }) {
         {
           role: "system",
           content:
-            "You are an ecommerce catalog quality analyst. You produce concise Shopify product content, SEO, and conversion clarity feedback."
+            "You are an ecommerce catalogue quality analyst. You produce concise Shopify product content, SEO, and conversion clarity feedback."
         },
         {
           role: "user",
@@ -556,7 +556,7 @@ async function saveSubmission(submission) {
   if (!existsSync(submissionsPath)) {
     await appendFile(
       submissionsPath,
-      "createdAt,ip,storeUrl,email,wouldPay,mostImportantFeature,source,healthScore,summary\n"
+      "createdAt,ip,storeUrl,contactHandle,wouldPay,mostImportantFeature,source,healthScore,summary\n"
     );
   }
 
@@ -566,7 +566,7 @@ async function saveSubmission(submission) {
       submission.createdAt,
       submission.ip,
       submission.storeUrl,
-      submission.email,
+      submission.contactHandle,
       submission.wouldPay,
       submission.mostImportantFeature,
       submission.source,
@@ -724,7 +724,7 @@ function generateFallbackReport({ storeUrl, products }) {
     source: products.length ? "local-rules" : "demo-fallback",
     healthScore,
     summary: products.length
-      ? `CatalogueWise reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalog issues.`
+      ? `CatalogueWise reviewed ${products.length} public product page${products.length > 1 ? "s" : ""} and found visible catalogue issues.`
       : "CatalogueWise could not read public Shopify product data from this URL, so this is a sample preview of the report format.",
     opportunities: [
       shortDescriptions > 0
@@ -732,7 +732,7 @@ function generateFallbackReport({ storeUrl, products }) {
         : "Product descriptions can be strengthened with clearer buyer benefits and product-specific details.",
       missingAltCount > 0
         ? "Several product images appear to be missing descriptive alt text."
-        : "Image alt text should be checked across the full catalog for accessibility and SEO context.",
+        : "Image alt text should be checked across the full catalogue for accessibility and SEO context.",
       "SEO meta descriptions can be generated in bulk and reviewed before publishing."
     ],
     beforeAfterExamples,
@@ -762,13 +762,13 @@ function normalizeReport(report) {
     })),
     source: report.source || "unknown",
     healthScore: clampNumber(report.healthScore, 1, 55, 55),
-    summary: String(report.summary || "CatalogueWise found visible catalog cleanup opportunities."),
+    summary: String(report.summary || "CatalogueWise found visible catalogue cleanup opportunities."),
     opportunities,
     beforeAfterExamples,
     beforeAfter: beforeAfterExamples[0],
     bulkOpportunity:
       report.bulkOpportunity ||
-      "The full app will scan the entire catalog, group issues by priority, and preview approved updates in bulk."
+      "The full app will scan the entire catalogue, group issues by priority, and preview approved updates in bulk."
   };
 }
 

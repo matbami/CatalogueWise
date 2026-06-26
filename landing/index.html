@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CatalogueWise | Shopify Catalog Health Scanner</title>
+    <title>CatalogueWise | Shopify Catalogue Health Scanner</title>
     <meta
       name="description"
-      content="Run a free Shopify catalog health preview. Find weak product descriptions, SEO gaps, image alt text issues, and bulk cleanup opportunities."
+      content="Run a free Shopify catalogue health preview. Find weak product descriptions, SEO gaps, image alt text issues, and bulk cleanup opportunities."
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
@@ -26,11 +26,11 @@
       </header>
 
       <section class="hero" aria-labelledby="page-title">
-        <p class="eyebrow">Free Shopify catalog checkup</p>
+        <p class="eyebrow">Free Shopify catalogue checkup</p>
         <h1 id="page-title">Instantly scan your Shopify product pages.</h1>
         <p class="hero-text">
           Find weak descriptions, missing SEO details, image alt text gaps, and
-          bulk cleanup opportunities. No credit card. No signup. Try it now.
+          bulk cleanup opportunities. No signup. Try it now.
         </p>
 
         <form class="scan-form" id="scanForm">
@@ -81,7 +81,7 @@
           <article class="premium-card">
             <span class="metric-status lock">Locked</span>
             <strong>Bulk fix plan</strong>
-            <p>Preview generated fixes across your full catalog before publishing.</p>
+            <p>Preview generated fixes across your full catalogue before publishing.</p>
           </article>
           <article class="premium-card">
             <span class="metric-status lock">Locked</span>
@@ -108,15 +108,15 @@
         <aside class="full-app-note" id="fullAppNote" hidden>
           <strong>What the full app unlocks</strong>
           <p id="bulkOpportunity">
-            The full app will scan your full catalog, group issues by priority,
+            The full app will scan your full catalogue, group issues by priority,
             generate optimized fixes, and let you approve updates before publishing.
           </p>
         </aside>
 
         <section class="feedback-panel" id="feedback">
           <div>
-            <p class="eyebrow">20-second validation</p>
-            <h2>Would you pay to unlock full catalog cleanup?</h2>
+            <p class="eyebrow">10-second validation</p>
+            <h2>Would you pay to unlock full catalogue cleanup?</h2>
             <p>
               We are building the automated Shopify app to scan these issues and
               safely update approved fixes in bulk.
@@ -132,12 +132,12 @@
                 <option>Cleaning up Google Shopping or Meta ad feeds</option>
                 <option>Fixing inventory issues like missing SKUs or weights</option>
                 <option>Improving product descriptions in bulk</option>
-                <option>Finding catalog issues every week</option>
+                <option>Finding catalogue issues every week</option>
               </select>
             </label>
 
             <label>
-              Which pricing would feel fair for catalog cleanup?
+              Which pricing would feel fair for catalogue cleanup?
               <select id="payQuestion" required>
                 <option value="">Choose one</option>
                 <option>One-time cleanup fee per scan</option>
@@ -148,12 +148,12 @@
             </label>
 
             <label>
-              Your email address
+              Store name or Instagram handle
               <input
-                id="feedbackEmail"
-                type="email"
-                placeholder="you@example.com"
-                autocomplete="email"
+                id="contactHandle"
+                type="text"
+                placeholder="@yourstore or Store Name"
+                autocomplete="organization"
                 required
               />
             </label>
@@ -179,7 +179,7 @@
       const beforeAfterList = document.querySelector("#beforeAfterList");
       const bulkOpportunity = document.querySelector("#bulkOpportunity");
       const fullAppNote = document.querySelector("#fullAppNote");
-      const feedbackEmail = document.querySelector("#feedbackEmail");
+      const contactHandle = document.querySelector("#contactHandle");
       const payQuestion = document.querySelector("#payQuestion");
       const featureQuestion = document.querySelector("#featureQuestion");
       const saveResponse = document.querySelector("#saveResponse");
@@ -220,8 +220,8 @@
             scannedProducts: [],
             opportunities: [
               "We could not read public product data from this URL.",
-              "A full Shopify install would scan richer catalog fields.",
-              "Bulk approved updates would still be useful for growing catalogs."
+              "A full Shopify install would scan richer catalogue fields.",
+              "Bulk approved updates would still be useful for growing catalogues."
             ],
             beforeAfter: {
               current: "Product title could not be fetched automatically.",
@@ -243,7 +243,7 @@
         premiumCards.forEach((card) => card.classList.remove("is-unlocked"));
         featureQuestion.value = "";
         payQuestion.value = "";
-        feedbackEmail.value = "";
+        contactHandle.value = "";
         saveStatus.textContent = "";
         saveResponse.disabled = false;
         saveResponse.textContent = "Unlock my report and join Beta";
@@ -322,7 +322,7 @@
       }
 
       saveResponse.addEventListener("click", () => {
-        if (!featureQuestion.reportValidity() || !payQuestion.reportValidity() || !feedbackEmail.reportValidity()) {
+        if (!featureQuestion.reportValidity() || !payQuestion.reportValidity() || !contactHandle.reportValidity()) {
           return;
         }
 
@@ -357,7 +357,7 @@
           },
           body: JSON.stringify({
             storeUrl: storeUrl.value,
-            email: feedbackEmail.value,
+            contactHandle: contactHandle.value,
             wouldPay: payQuestion.value,
             mostImportantFeature: featureQuestion.value,
             source: currentReport.source,
