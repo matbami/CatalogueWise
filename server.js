@@ -12,6 +12,7 @@ loadLocalEnv();
 const port = Number(process.env.PORT || 3000);
 const scanLimitPerIpPerDay = Number(process.env.SCAN_LIMIT_PER_IP_PER_DAY || 5);
 const scanLimitPerStorePerDay = Number(process.env.SCAN_LIMIT_PER_STORE_PER_DAY || 2);
+const scanCacheVersion = 2;
 const scanAttempts = new Map();
 const scanCache = loadScanCache();
 
@@ -148,8 +149,8 @@ async function handleFeedback(req, res) {
     summary: String(body.summary || "").trim()
   };
 
-  await saveSubmission(submission);
-  sendJson(res, 200, { ok: true });
+  const sheetsResult = await saveSubmission(submission);
+  sendJson(res, 200, { ok: true, sheets: sheetsResult });
 }
 
 async function handleSubmissionsAdmin(url, res) {
@@ -281,7 +282,7 @@ function getCachedScan(storeUrl) {
   if (!cached) return null;
 
   const cacheTtlMs = 24 * 60 * 60 * 1000;
-  if (Date.now() - cached.createdAt > cacheTtlMs) {
+  if (cached.version !== scanCacheVersion || Date.now() - cached.createdAt > cacheTtlMs) {
     scanCache.delete(storeUrl);
     return null;
   }
@@ -291,6 +292,7 @@ function getCachedScan(storeUrl) {
 
 function setCachedScan(storeUrl, report) {
   scanCache.set(storeUrl, {
+    version: scanCacheVersion,
     createdAt: Date.now(),
     report
   });
@@ -420,16 +422,28 @@ function buildAiPrompt({ storeUrl, products }) {
       "Use short, simple sentences.",
       "Do not use em dashes.",
       "Prefer periods and commas over complex punctuation.",
-      "Avoid jargon unless it is a common ecommerce term like SEO, meta description, or alt text."
+      "Avoid jargon unless it is a common ecommerce term like SEO, meta description, or alt text.",
+      "Optimize product titles only.",
+      "Do not rewrite long product descriptions in this preview.",
+      "Optimized titles must be concise, clear, straightforward, and descriptive enough to help a shopper understand the product.",
+      "Avoid generic filler words.",
+      "Avoid emojis."
     ],
     schema: {
-      healthScore: "number from 1 to 100",
+      healthScore: "number from 1 to 55. This is a sample opportunity score, not a store health guarantee.",
       summary: "one sentence",
       opportunities: ["three short issue strings"],
+      beforeAfterExamples: [
+        {
+          product: "product name",
+          current: "current product title",
+          optimized: "optimized product title"
+        }
+      ],
       beforeAfter: {
         product: "product name",
-        current: "weak current title or description excerpt",
-        optimized: "improved title or description"
+        current: "current product title",
+        optimized: "optimized product title"
       },
       bulkOpportunity: "one sentence about bulk scanning and approved updates"
     }
@@ -466,7 +480,7 @@ async function generateGeminiReport({ storeUrl, products }) {
       ],
       generationConfig: {
         temperature: 0.4,
-        maxOutputTokens: 520,
+        maxOutputTokens: 720,
         responseMimeType: "application/json"
       }
     }),
@@ -502,7 +516,7 @@ async function generateOpenAiReport({ storeUrl, products }) {
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       temperature: 0.4,
-      max_tokens: 520,
+      max_tokens: 720,
       response_format: { type: "json_object" },
       messages: [
         {
@@ -562,6 +576,37 @@ async function saveSubmission(submission) {
       .map(csvEscape)
       .join(",") + "\n"
   );
+
+  return sendSubmissionToGoogleSheets(submission);
+}
+
+async function sendSubmissionToGoogleSheets(submission) {
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return { enabled: false };
+  }
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(submission),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Google Sheets webhook returned ${response.status}: ${errorBody}`);
+    }
+
+    return { enabled: true, ok: true };
+  } catch (error) {
+    console.error("Google Sheets sync failed:", error.message);
+    return { enabled: true, ok: false, error: error.message };
+  }
 }
 
 function csvEscape(value) {
@@ -666,7 +711,12 @@ function generateFallbackReport({ storeUrl, products }) {
     0
   );
   const shortDescriptions = products.filter((item) => (item.description || "").length < 180).length;
-  const healthScore = products.length ? Math.max(42, 78 - missingAltCount * 4 - shortDescriptions * 8) : 58;
+  const healthScore = products.length ? Math.min(55, Math.max(38, 64 - missingAltCount * 3 - shortDescriptions * 6)) : 55;
+  const beforeAfterExamples = (products.length ? products : [product]).slice(0, 2).map((item) => ({
+    product: item.title,
+    current: item.title,
+    optimized: buildOptimizedTitleSuggestion(item)
+  }));
 
   return normalizeReport({
     storeUrl,
@@ -685,15 +735,10 @@ function generateFallbackReport({ storeUrl, products }) {
         : "Image alt text should be checked across the full catalog for accessibility and SEO context.",
       "SEO meta descriptions can be generated in bulk and reviewed before publishing."
     ],
-    beforeAfter: {
-      product: product.title,
-      current: product.description
-        ? compactText(description, 120)
-        : product.title,
-      optimized: buildOptimizedSuggestion(product)
-    },
+    beforeAfterExamples,
+    beforeAfter: beforeAfterExamples[0],
     bulkOpportunity:
-      "A full Shopify app could scan every product, generate optimized titles/descriptions/meta text, and let you approve updates in bulk before publishing."
+      "The full app will scan every product, group issues by priority, generate fixes, and let you approve bulk updates before publishing."
   });
 }
 
@@ -707,6 +752,8 @@ function normalizeReport(report) {
     opportunities.push("Review product content for clearer buyer details and stronger search snippets.");
   }
 
+  const beforeAfterExamples = normalizeBeforeAfterExamples(report, products);
+
   return {
     storeUrl: report.storeUrl,
     scannedProducts: products.map((product) => ({
@@ -714,20 +761,36 @@ function normalizeReport(report) {
       url: product.url
     })),
     source: report.source || "unknown",
-    healthScore: clampNumber(report.healthScore, 1, 100, 64),
+    healthScore: clampNumber(report.healthScore, 1, 55, 55),
     summary: String(report.summary || "CatalogPulse found visible catalog cleanup opportunities."),
     opportunities,
-    beforeAfter: {
-      product: report.beforeAfter?.product || products[0]?.title || "Sample product",
-      current: report.beforeAfter?.current || products[0]?.title || "Short product copy",
-      optimized:
-        report.beforeAfter?.optimized ||
-        "A clearer product description with material, fit, use case, and buyer benefit details."
-    },
+    beforeAfterExamples,
+    beforeAfter: beforeAfterExamples[0],
     bulkOpportunity:
       report.bulkOpportunity ||
-      "A full Shopify app could scan the entire catalog and preview approved updates in bulk."
+      "The full app will scan the entire catalog, group issues by priority, and preview approved updates in bulk."
   };
+}
+
+function normalizeBeforeAfterExamples(report, products) {
+  const sourceExamples = Array.isArray(report.beforeAfterExamples)
+    ? report.beforeAfterExamples
+    : report.beforeAfter
+      ? [report.beforeAfter]
+      : [];
+
+  const examples = sourceExamples.slice(0, 2).map((example, index) => {
+    const product = products[index] || example;
+    const currentTitle = String(products[index]?.title || example.product || example.current || `Sample product ${index + 1}`);
+
+    return {
+      product: currentTitle,
+      current: currentTitle,
+      optimized: sanitizeTitleCandidate(example.optimized || buildOptimizedTitleSuggestion(product))
+    };
+  });
+
+  return examples;
 }
 
 function stripHtml(html) {
@@ -749,10 +812,26 @@ function compactText(text, maxLength) {
   return `${clean.slice(0, maxLength - 3)}...`;
 }
 
-function buildOptimizedSuggestion(product) {
+function buildOptimizedTitleSuggestion(product) {
   const title = product.title || "Product";
-  const type = product.productType ? ` ${product.productType}` : "";
-  return `${title}${type}: a clearer product page with fit, material, styling, care, and occasion details so shoppers can decide faster.`;
+  const type = product.productType || "fashion item";
+  const cleanedTitle = title.replace(/\s+/g, " ").trim();
+  if (type && !cleanedTitle.toLowerCase().includes(type.toLowerCase())) {
+    return `${cleanedTitle} ${type}`.trim();
+  }
+  return cleanedTitle;
+}
+
+function sanitizeTitleCandidate(value) {
+  const text = String(value || "")
+    .replace(/^optimized title:\s*/i, "")
+    .replace(/^title:\s*/i, "")
+    .split("\n")[0]
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const firstSentence = text.includes(".") ? text.split(".")[0].trim() : text;
+  return compactText(firstSentence || "Clear product title", 90);
 }
 
 function clampNumber(value, min, max, fallback) {

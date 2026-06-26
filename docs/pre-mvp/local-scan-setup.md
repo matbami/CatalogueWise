@@ -26,15 +26,15 @@ https://store-domain.com/products.json?limit=2
 
 ## Score And Summary Logic
 
-If Gemini is enabled, Gemini returns the health score and summary from the sampled public product data.
+If Gemini is enabled, Gemini returns the sample opportunity score and summary from the sampled public product data.
 
-If Gemini is not enabled or fails, the local fallback estimates the score like this:
+If Gemini is not enabled or fails, the local fallback estimates the sample opportunity score like this:
 
 ```text
-78 - (missing image alt text count * 4) - (short description count * 8)
+64 - (missing image alt text count * 3) - (short description count * 6)
 ```
 
-The fallback score cannot go below `42` when products are found. If no products are readable, it returns a demo fallback score of `58`.
+The app caps the visible score at `55` because this is a limited public sample scan, not a full store health grade. The fallback score cannot go below `38` when products are found. If no products are readable, it returns a demo fallback score of `55`.
 
 ## Run Locally
 
@@ -68,6 +68,7 @@ PORT=3000
 ADMIN_TOKEN=change-this-before-deploying
 SCAN_LIMIT_PER_IP_PER_DAY=5
 SCAN_LIMIT_PER_STORE_PER_DAY=2
+GOOGLE_SHEETS_WEBHOOK_URL=
 ```
 
 Restart the server after editing `.env`.
@@ -101,6 +102,12 @@ http://localhost:3000/admin/submissions?token=your_admin_token
 ```
 
 The admin page also has a CSV download link.
+
+To send submissions into Google Sheets too, follow:
+
+```text
+docs/pre-mvp/google-sheets-setup.md
+```
 
 ## Budget Protection
 

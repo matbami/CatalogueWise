@@ -67,26 +67,26 @@ select {
 }
 
 .brand-mark {
+  position: relative;
   display: grid;
   width: 38px;
   height: 38px;
   place-items: center;
+  padding: 6px;
   border-radius: 8px;
   color: #ffffff;
   background: var(--blue);
-  font-size: 13px;
+  box-shadow: 0 10px 24px rgba(35, 87, 216, 0.22);
 }
 
-.pricing-link {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.84);
-  font-weight: 800;
+.brand-mark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
 }
 
 .hero {
@@ -206,51 +206,20 @@ h2 {
   opacity: 0.72;
 }
 
-.console-panel {
-  overflow: hidden;
-  margin: 0 auto 24px;
-  border: 1px solid #223047;
-  border-radius: 10px;
-  color: #d8f7e6;
-  background: #101827;
-  box-shadow: var(--shadow);
-}
-
-.console-top {
-  display: flex;
-  gap: 7px;
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: #0d1420;
-}
-
-.console-top span {
-  width: 10px;
-  height: 10px;
+.button-loader {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-top-color: #ffffff;
   border-radius: 999px;
-  background: #6d7687;
+  animation: spin 780ms linear infinite;
 }
 
-.console-lines {
-  display: grid;
-  gap: 8px;
-  min-height: 164px;
-  padding: 18px;
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 14px;
-}
-
-.progress-track {
-  height: 8px;
-  background: #1f2d43;
-}
-
-.progress-track span {
-  display: block;
-  width: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #4ade80, #60a5fa);
-  transition: width 420ms ease;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .result-section {
@@ -448,6 +417,21 @@ h2 {
   color: var(--muted);
 }
 
+.before-after-list {
+  display: grid;
+  gap: 14px;
+}
+
+.before-after-card {
+  display: grid;
+  gap: 10px;
+}
+
+.before-after-card h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
 .before-after {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -457,6 +441,11 @@ h2 {
 .before-after div {
   padding: 16px;
   background: var(--soft);
+}
+
+.before-after .optimized-copy {
+  border-color: rgba(20, 131, 78, 0.28);
+  background: #ecfdf3;
 }
 
 .before-after span {
@@ -471,6 +460,12 @@ h2 {
 .before-after p {
   margin: 0;
   color: var(--muted);
+  white-space: pre-line;
+}
+
+.optimized-copy p {
+  color: #155b37;
+  font-weight: 760;
 }
 
 .bulk-note {
@@ -481,6 +476,26 @@ h2 {
   color: var(--blue-dark);
   background: rgba(35, 87, 216, 0.06);
   font-weight: 760;
+}
+
+.full-app-note {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid rgba(35, 87, 216, 0.22);
+  border-left: 5px solid var(--blue);
+  border-radius: 12px;
+  color: var(--blue-dark);
+  background: #eef4ff;
+  box-shadow: 0 14px 36px rgba(35, 87, 216, 0.08);
+}
+
+.full-app-note strong {
+  font-size: 16px;
+}
+
+.full-app-note p {
+  margin: 0;
 }
 
 .feedback-panel {
@@ -564,8 +579,7 @@ h2 {
   }
 
   .input-row button,
-  .button,
-  .pricing-link {
+  .button {
     width: 100%;
   }
 

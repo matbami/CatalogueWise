@@ -42,6 +42,12 @@ View submissions:
 http://localhost:3000/admin/submissions?token=YOUR_ADMIN_TOKEN
 ```
 
+To also send submissions to Google Sheets, see:
+
+```text
+docs/pre-mvp/google-sheets-setup.md
+```
+
 ## Deploy
 
 Use a Node hosting platform such as Render or Railway.
@@ -51,4 +57,3 @@ Start command:
 ```bash
 npm start
 ```
-
